@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#340a16">
+  <meta name="description" content="Терапевтический шатёр. Гриффиндору от Слизерина. Даже храброму льву порой нужен знак.">
+  <title>Терапевтический шатёр</title>
+  <link rel="icon" href="favicon.ico" sizes="any">
+  <link rel="icon" href="assets/favicon-32.png" type="image/png" sizes="32x32">
+  <link rel="apple-touch-icon" href="assets/favicon-192.png">
+  <link rel="preload" href="assets/curtains.webp" as="image">
+  <link rel="preload" href="assets/deck.webp" as="image">
+  <link rel="stylesheet" href="styles.css">
+  <script src="script.js" defer></script>
+</head>
+<body>
+  <div class="curtains" aria-hidden="true">
+    <div class="curtain curtain-left"></div>
+    <div class="curtain curtain-right"></div>
+  </div>
+
+  <section class="entrance" id="entrance" aria-labelledby="welcome">
+    <header class="entrance-header">
+      <img class="crest" src="assets/lion.png" alt="" width="58" height="62">
+      <p class="site-name">Терапевтический шатёр</p>
+    </header>
+    <div class="invitation">
+      <div class="ornament" aria-hidden="true"><span>✦</span></div>
+      <h1 id="welcome">Даже храброму льву<br>порой нужен <em>знак</em></h1>
+      <button class="gold-button enter-button" id="enter" type="button">Войти</button>
+      <div class="ornament ornament-bottom" aria-hidden="true"><span>✧</span></div>
+    </div>
+    <footer class="dedication">Гриффиндору от Слизерина</footer>
+  </section>
+
+  <main class="tent" id="tent" hidden aria-labelledby="tent-title">
+    <header class="tent-header">
+      <span class="header-star" aria-hidden="true">✧</span>
+      <h1 id="tent-title">Терапевтический шатёр</h1>
+      <span class="header-star" aria-hidden="true">✧</span>
+    </header>
+
+    <section class="table" aria-label="Стол с колодой карт">
+      <div class="stage" id="stage">
+        <button class="deck" id="deck" type="button" aria-label="Вытянуть карту" title="Вытянуть карту">
+          <img src="assets/deck.webp" alt="Колода бордовых карт со змеями и звёздами" width="1024" height="1536" draggable="false">
+        </button>
+        <button class="card" id="card" type="button" aria-label="Перевернуть карту" hidden disabled>
+          <span class="card-turner" id="card-turner">
+            <span class="card-side card-back"><img src="assets/card-back.webp" alt="Рубашка карты со змеями и звёздами" width="1024" height="1536" draggable="false"></span>
+            <span class="card-side card-front" aria-hidden="true"><img id="lion-card" alt="Карта с изображением льва" width="1170" height="1756" draggable="false"></span>
+          </span>
+        </button>
+      </div>
+      <div class="card-controls">
+        <p class="question">Что у тебя на уме?</p>
+        <div class="next-slot"><button class="gold-button next-button" id="next" type="button" hidden>Вытянуть ещё</button></div>
+        <p class="error-message" id="error" role="alert" hidden></p>
+      </div>
+    </section>
+    <footer class="tent-footer" aria-hidden="true"><span></span>✧<span></span></footer>
+  </main>
+
+  <p class="sr-only" id="status" role="status" aria-live="polite" aria-atomic="true"></p>
+  <noscript><div class="no-script">Чтобы войти в шатёр и вытянуть карту, включи JavaScript в браузере.</div></noscript>
+</body>
+</html>
