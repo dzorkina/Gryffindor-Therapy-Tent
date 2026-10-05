@@ -11,8 +11,8 @@
   <link rel="apple-touch-icon" href="assets/favicon-192.png">
   <link rel="preload" href="assets/curtains.webp" as="image">
   <link rel="preload" href="assets/deck.webp" as="image">
-  <link rel="stylesheet" href="styles.css">
-  <script src="script.js" defer></script>
+  <link rel="stylesheet" href="styles.css?v=2">
+  <script src="script.js?v=2" defer></script>
 </head>
 <body>
   <div class="curtains" aria-hidden="true">
@@ -23,11 +23,17 @@
   <section class="entrance" id="entrance" aria-labelledby="welcome">
     <header class="entrance-header">
       <img class="crest" src="assets/lion.png" alt="" width="58" height="62">
-      <p class="site-name">Терапевтический шатёр</p>
+      <h1 class="site-name" id="welcome">Терапевтический шатёр</h1>
     </header>
     <div class="invitation">
       <div class="ornament" aria-hidden="true"><span>✦</span></div>
-      <h1 id="welcome">Даже храброму льву<br>порой нужен <em>знак</em></h1>
+      <div class="intro-copy">
+        <p>Иногда мы очень долго гонимся за добычей, чтобы в итоге понять, что всё это время пытались поймать свой собственный хвост.</p>
+        <p>Иногда нам просто нужно остановиться и разобраться в себе.</p>
+        <p>Иногда, даже очень храброму льву, нужен знак.</p>
+        <p>Чтобы получить его, заходите в терапевтический шатер и примите помощь метафорической колоды </p>
+        <p><em>v.Gryff</em></p>
+      </div>
       <button class="gold-button enter-button" id="enter" type="button">Войти</button>
       <div class="ornament ornament-bottom" aria-hidden="true"><span>✧</span></div>
     </div>
@@ -55,7 +61,7 @@
       </div>
       <div class="card-controls">
         <p class="question">Что у тебя на уме?</p>
-        <div class="next-slot"><button class="gold-button next-button" id="next" type="button" hidden>Вытянуть ещё</button></div>
+        <div class="next-slot"><button class="gold-button next-button" id="next" type="button" hidden>Вытянуть ещё одну</button></div>
         <p class="error-message" id="error" role="alert" hidden></p>
       </div>
     </section>

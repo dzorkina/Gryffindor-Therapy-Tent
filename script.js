@@ -10,6 +10,7 @@
   const stage = byId('stage');
   const card = byId('card');
   const front = byId('lion-card');
+  const turner = byId('card-turner');
   const backSide = card.querySelector('.card-back');
   const frontSide = card.querySelector('.card-front');
   const nextButton = byId('next');
@@ -18,12 +19,36 @@
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
   let state = 'entrance';
   let pile = [];
-  let current = null;
   let lastCard = null;
+  let keyboardInput = false;
 
-  const pause = (milliseconds) => new Promise((resolve) => setTimeout(resolve, reduceMotion.matches ? 0 : milliseconds));
   const announce = (text) => { status.textContent = text; };
   const getState = () => ({ state, cardRevealed: state === 'face-up' });
+  const nextPaint = () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+  const focusForKeyboard = (element) => { if (keyboardInput) element.focus({ preventScroll: true }); };
+  document.addEventListener('keydown', () => { keyboardInput = true; });
+  document.addEventListener('pointerdown', () => { keyboardInput = false; }, { passive: true });
+
+  async function motion(element, frames, duration, easing = 'ease-in-out', finalStyles = {}) {
+    if (!element.animate) {
+      const lastFrame = frames[frames.length - 1];
+      Object.assign(element.style, lastFrame, finalStyles);
+      return;
+    }
+    const animation = element.animate(frames, { duration, easing, fill: 'both' });
+    try { await animation.finished; } catch { /* A canceled animation still reaches a usable state. */ }
+    Object.assign(element.style, finalStyles);
+    animation.cancel();
+  }
+
+  function sizeDeck() {
+    if (tent.hidden) return;
+    const width = parseFloat(getComputedStyle(deck).width);
+    const cardWidth = parseFloat(getComputedStyle(card).width);
+    if (width > 0) stage.style.setProperty('--deck-scale', String(Math.min(2.2, cardWidth / width)));
+  }
+  if (window.ResizeObserver) new ResizeObserver(sizeDeck).observe(stage);
+  else window.addEventListener('resize', sizeDeck, { passive: true });
 
   function refillPile() {
     pile = [...cards];
@@ -57,13 +82,26 @@
     entrance.inert = true;
     entrance.classList.add('is-leaving');
     tent.hidden = false;
-    // Flush the initial opacity before starting both curtain transitions.
-    void tent.offsetWidth;
+    window.scrollTo(0, 0);
+    sizeDeck();
+    await nextPaint();
+    const limited = reduceMotion.matches;
+    document.body.classList.toggle('motion-limited', limited);
     document.body.classList.add('entered');
-    await pause(1650);
+    const curtainMotion = limited
+      ? motion(document.querySelector('.curtains'), [{ opacity: 1 }, { opacity: 0 }], 650)
+      : Promise.all([
+        motion(document.querySelector('.curtain-left'), [{ transform: 'translate3d(0,0,0)' }, { transform: 'translate3d(-89%,0,0)' }], 1650, 'cubic-bezier(.42,0,.2,1)'),
+        motion(document.querySelector('.curtain-right'), [{ transform: 'translate3d(0,0,0)' }, { transform: 'translate3d(89%,0,0)' }], 1650, 'cubic-bezier(.42,0,.2,1)'),
+      ]);
+    await Promise.all([
+      curtainMotion,
+      motion(entrance, [{ opacity: 1 }, { opacity: 0 }], 400, 'ease-in-out', { opacity: '0' }),
+      motion(tent, [{ opacity: 0 }, { opacity: 1 }], limited ? 650 : 1100),
+    ]);
     entrance.hidden = true;
     state = 'ready';
-    deck.focus({ preventScroll: true });
+    focusForKeyboard(deck);
     announce('Шатёр открыт. Нажми на колоду, чтобы вытянуть карту.');
     return getState();
   }
@@ -79,10 +117,13 @@
     card.disabled = true;
 
     if (previousState === 'face-up') {
-      card.classList.add('is-removing');
-      await pause(450);
+      const frames = reduceMotion.matches
+        ? [{ opacity: 1 }, { opacity: 0 }]
+        : [{ opacity: 1, transform: 'translate3d(0,0,0)' }, { opacity: 0, transform: 'translate3d(0,-10px,0)' }];
+      await motion(card, frames, 350, 'ease-in-out', { opacity: '0' });
       card.hidden = true;
-      card.classList.remove('is-removing', 'is-flipped');
+      card.classList.remove('is-flipped');
+      card.style.opacity = '';
     }
 
     if (!pile.length) refillPile();
@@ -93,29 +134,39 @@
       pile.push(chosen);
       card.hidden = true;
       stage.classList.remove('has-card');
-      current = null;
       state = 'ready';
       deck.disabled = false;
       error.textContent = 'Карта не загрузилась. Нажми на колоду ещё раз.';
       error.hidden = false;
-      deck.focus({ preventScroll: true });
+      focusForKeyboard(deck);
       return getState();
     }
 
-    current = chosen;
     lastCard = chosen;
     card.classList.remove('is-flipped');
     card.setAttribute('aria-label', 'Перевернуть карту');
     backSide.removeAttribute('aria-hidden');
     frontSide.setAttribute('aria-hidden', 'true');
-    stage.classList.add('has-card');
+    // Move the deck once, using only a transform. Both card slots already exist.
+    if (!stage.classList.contains('has-card')) {
+      const start = getComputedStyle(deck).transform;
+      if (reduceMotion.matches) {
+        await motion(deck, [{ opacity: 1 }, { opacity: 0 }], 180, 'ease-in', { opacity: '0' });
+        stage.classList.add('has-card');
+        await motion(deck, [{ opacity: 0 }, { opacity: 1 }], 260, 'ease-out', { opacity: '' });
+      } else {
+        stage.classList.add('has-card');
+        await motion(deck, [{ transform: start }, { transform: 'translate3d(0,0,0) rotate(-7deg)' }], 650, 'cubic-bezier(.42,0,.2,1)');
+      }
+    }
     card.hidden = false;
-    card.classList.add('is-dealing');
-    await pause(700);
-    card.classList.remove('is-dealing');
+    const dealFrames = reduceMotion.matches
+      ? [{ opacity: 0 }, { opacity: 1 }]
+      : [{ opacity: 0, transform: 'translate3d(-28px,0,0)' }, { opacity: 1, transform: 'translate3d(0,0,0)' }];
+    await motion(card, dealFrames, reduceMotion.matches ? 320 : 650, 'cubic-bezier(.42,0,.2,1)');
     card.disabled = false;
     state = 'face-down';
-    card.focus({ preventScroll: true });
+    focusForKeyboard(card);
     announce('Карта лежит рубашкой вверх. Нажми на неё, чтобы перевернуть.');
     return getState();
   }
@@ -124,15 +175,24 @@
     if (state !== 'face-down') throw new Error('Draw a face-down card before flipping it.');
     state = 'flipping';
     card.disabled = true;
-    card.classList.add('is-flipped');
-    await pause(850);
+    if (reduceMotion.matches) {
+      await motion(turner, [{ opacity: 1 }, { opacity: 0 }], 180, 'ease-in', { opacity: '0' });
+      card.classList.add('is-flipped');
+      await motion(turner, [{ opacity: 0 }, { opacity: 1 }], 280, 'ease-out', { opacity: '' });
+    } else {
+      // Swap faces at the narrowest point: no nested 3D layers or reverse flip.
+      await motion(turner, [{ transform: 'scaleX(1)' }, { transform: 'scaleX(0)' }], 360, 'ease-in', { transform: 'scaleX(0)' });
+      card.classList.add('is-flipped');
+      await motion(turner, [{ transform: 'scaleX(0)' }, { transform: 'scaleX(1)' }], 440, 'ease-out', { transform: '' });
+    }
     state = 'face-up';
     backSide.setAttribute('aria-hidden', 'true');
     frontSide.removeAttribute('aria-hidden');
     card.setAttribute('aria-label', 'Открытая карта с изображением льва');
     nextButton.hidden = false;
     nextButton.disabled = false;
-    nextButton.focus({ preventScroll: true });
+    focusForKeyboard(nextButton);
+    await motion(nextButton, [{ opacity: 0 }, { opacity: 1 }], 250);
     announce('Карта открыта. Можно вытянуть ещё.');
     return getState();
   }
